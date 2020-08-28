@@ -25,6 +25,8 @@ class coolpcSpider(scrapy.Spider):
 			line=row.extract()
 			try: print line
 			except: continue
+                        try: price = re.search('\$\d+', line).group()
+                        except: continue
 			if "R3" in line: line=line.replace("R3", "AMD Ryzen 3")
 			if "R5" in line: line=line.replace("R5", "AMD Ryzen 5")
 			if "R7" in line: line=line.replace("R7", "AMD Ryzen 7")
@@ -34,13 +36,13 @@ class coolpcSpider(scrapy.Spider):
 			if "G5400" in line: line=line.replace("G5400", "Gold G5400")
 			if "Intel i" in line: line=line.replace("Intel i","Intel Core i")
 			if "AMD AMD" in line: line=line.replace("AMD AMD", "AMD")
-			cpu = re.search('(Intel|AMD)[\s\-\w\+]+', line).group()
 			try: watt = re.search('[\/\)]\d+W\/?', line).group().strip("W/").replace("/","").replace(")","")
 			except: pass
+			cpu = re.search('(Intel|AMD)[\s\-\w\+]+', line).group()
 			if 'Intel Xeon E5-2620 V4' in cpu: watt = "85"
+                        if watt == None: continue
 			try: cores = re.search('\d+[^\w\s,]\/\d+[^\w,](GPU)?', line).group()
 			except AttributeError: cores = re.search('\d[^\w\s\"]{1,2}(\d[^\w]{1})?', line).group()
-			price = re.search('\$\d+', line).group()
 			if dict_cpu.get(cpu) == None: dict_cpu[cpu] = cores, watt, int(price.strip("$"))
 			elif dict_cpu.get(cpu)[2] > int(price.strip("$")) and dict_cpu.get(cpu)[2] - int(price.strip("$")) < 5000:
 				watt = dict_cpu.get(cpu)[1]
