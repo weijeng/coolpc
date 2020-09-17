@@ -32,9 +32,10 @@ class coolpcSpider(scrapy.Spider):
 			result = re.sub(r'(D4-|DD[DR]4 -?)(\d+)',r'DDR4-\2',result)
 			result = re.sub(r'(\d+)MHz D(DR)?4',r'DDR4-\1',result)
 			if "DDR" not in result: continue
-			try: size = re.search('[\-\s]?\d+(GB|BG|G)(\*\d)?', result).group()
-			except: size = re.search('\d+G\(\d+G\*\d\)', result).group()
-			size = size.replace("BG","GB")
+			#try: size = re.search('[\-\s]?\d+(GB|BG|G)(\*\d)?', result).group()
+			#except: size = re.search('\d+G\(\d+G\*\d\)', result).group()
+			try: size = re.search('\(?\d+G\*\d\)?', result).group()
+			except: size = re.search('\d+GB?', result).group()
 			type = re.search('DDR\dL?-\d+', result).group()
 			name = re.sub(type,'',result)
 			try:
@@ -42,9 +43,9 @@ class coolpcSpider(scrapy.Spider):
 				name = re.sub(latency,'',name)
 			except: pass
 			name = name.replace(size,'')
+			size = re.sub('[\(\)]','',size)
 			name = re.sub('[,/]','',name)
 			print "  ==> " + name
-			#type = re.sub(' ','-',type)
 			ws.append([name, size, type, latency, price])
 		wb.save(filename)
 	
