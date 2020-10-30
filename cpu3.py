@@ -24,7 +24,8 @@ class coolpcSpider(scrapy.Spider):
 			cpu=cores=price=watt=None
 			line=row.extract()
 			try: print line
-			except: continue
+			except: print " => can not print"; continue
+			if "ROG STRIX" in line: continue
 			try: price = re.search('\$\d+', line).group()
 			except: continue
 			line = re.sub(r'(AMD )?R(\d)', r'AMD Ryzen \2', line)
