@@ -2,8 +2,9 @@ import scrapy
 import re
 import openpyxl
 import datetime
+import time
 now=datetime.datetime.now()
-filename = "CPU_" + now.strftime("%Y-%m-%d") + ".xlsx"
+filename = "CPU_SSD_" + now.strftime("%Y-%m-%d") + ".xlsx"
 
 class coolpcSpider(scrapy.Spider):
 	name = "cpu"
@@ -18,6 +19,7 @@ class coolpcSpider(scrapy.Spider):
 	def parse(self, response):
 		wb = openpyxl.Workbook()
 		ws = wb.active
+		ws.title = "CPU"
 		ws.append(["Name", "Cores", "Watt", "Price", "Singel Score", "Multiple Score", "Score/Price"])
 		dict_cpu = {}
 		for row in response.xpath('//select/optgroup')[3].xpath('.//option'):
@@ -63,27 +65,55 @@ class coolpcSpider(scrapy.Spider):
 			ws.append([ x, y[0], y[1], y[2], s1, s2, sp_ratio ])
 			i+=1
 		wb.save(filename)
+		time.sleep(3)
+		
+		# SSD
+		ws = wb.create_sheet("SSD")
+		ws.append(["Name", "Size", "Read", "Write", "Type", "Price"])	
+		for row in response.xpath('//select/optgroup')[6].xpath('.//option'):
+			name=size=read=write=type=price=None
+			result=row.extract()
+			try: print result
+			except: continue
+			name = re.search('^.+?\/', result).group()
+			name = re.sub('<.+?>','',name)
+			name = name.replace("/", "")
+			name = re.sub('[^w]:\d+M','',name)
+			try: size = re.search('\d{3,4}GB?|\dTB', result).group()
+			except: pass
+			if size: 
+				name = name.replace(size, "")
+				size = size.replace(" ", "").replace("-", "").replace("G", "").replace("B", "")
+				if "T" in size:
+					size = size.replace("T", "")
+					size = int(size)*1024
+			try: read = re.findall('\:\d{3,4}', result)[0].replace(":", "")
+			except: continue
+			write = re.findall('\:\d{3,4}', result)[1].replace(":", "")
+			try: type = re.search('[TQM]LC', result).group()
+			except: pass
+			price = re.search('\$\d+', result).group()
+			ws.append([name, size, read, write, type, price])
+			#print "  ==> " + name + '\t' + size + '\t' + read + '\t' + write + '\t' + price
+		wb.save(filename)
+		time.sleep(3)
 		
 	def parse_geek(self, response):
 		wb = openpyxl.load_workbook(filename)
-		ws = wb.create_sheet(title="Geek_single")
+		ws = wb.create_sheet("Geek_single")
 		latest = 0
 		score = 0
 		for row in response.selector.xpath("//tr/td[@class]"):
 			line = row.extract()
-			#try: print line
-			#except: pass
 			if "name" in line:
 				cpu = re.search('(Intel|AMD|HP|A4)( [\-\w\+]+)+', line).group()
 			elif "score" in line: 
 				score = re.search('\d+', line).group()
 			if int(score) - int(latest) > 10000:
-				print "==> change to multiple sheet"
-				ws = wb.create_sheet(title="Geek_multiple")
+				ws = wb.create_sheet("Geek_multiple")
 			if score > 0:
 				ws.append([cpu, score])
-				#print " => cpu: " + cpu
-				#print " => score: " + score + "\n"
 				latest = score
 				score = 0
 		wb.save(filename)
+
