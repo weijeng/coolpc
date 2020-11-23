@@ -1,0 +1,13 @@
+https://www.tutorialspoint.com/scrapy/scrapy_selectors.htm
+
+
+scrapy shell
+>>> fetch("https://benchmarks.ul.com/compare/best-gpus")
+>>> response.xpath('//td/a/text()').extract()[0]
+u'NVIDIA GeForce RTX 3090'
+
+>>> response.xpath('//td[@class="small-pr1"]/div/div/span[@class="bar-score"]/text()').extract()[0]
+u'\n            19833\n          '
+>>> response.xpath('//td[@class="small-pr1"]/div/div/span[@class="bar-score"]/text()').extract()[1]
+u'\n            17685\n          '
+>>>
