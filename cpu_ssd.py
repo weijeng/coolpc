@@ -34,6 +34,7 @@ class coolpcSpider(scrapy.Spider):
 			elif len(price) == 1: price = price[0]
 			else: print " ==> Does not find price"; continue
 			line = re.sub(r'(AMD )?R(\d)', r'AMD Ryzen \2', line)
+			line = re.sub(r'(AMD )?Athlon', r'AMD Athlon', line)
 			line = re.sub('TR', 'Threadripper', line)
 			line = re.sub('Intel i', 'Intel Core i', line)
 			if "G5400" in line: line=line.replace("G5400", "Gold G5400")
