@@ -13,8 +13,10 @@ class coolpcSpider(scrapy.Spider):
 	def start_requests(self):
 		urls = [
 			'http://www.coolpc.com.tw/evaluate.php',
+			'https://benchmarks.ul.com/compare/best-gpus'
 		]
 		yield scrapy.Request(url=urls[0], callback=self.parse)
+		yield scrapy.Request(url=urls[1], callback=self.benchmarks)
 
 	def parse(self, response):
 		wb = openpyxl.Workbook()
@@ -40,5 +42,14 @@ class coolpcSpider(scrapy.Spider):
 			print "  ==> " + name
 			print "  ==> " + type + "\t" + price
 			#time.sleep(2)
+		wb.save(filename)
+		
+	def benchmarks(self, response):
+		wb = openpyxl.load_workbook(filename)
+		ws = wb.create_sheet("score")
+		gpu = response.xpath('//td/a/text()').extract()
+		score = response.xpath('//td[@class="small-pr1"]/div/div/span[@class="bar-score"]/text()').extract()
+		for x, y in zip(gpu, score):
+			ws.append([x.strip(), y.strip()])
 		wb.save(filename)
 	
