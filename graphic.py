@@ -32,22 +32,25 @@ class coolpcSpider(scrapy.Spider):
 			except: price = re.findall('\$\s?\d+', name)[0]
 			name = re.sub('<.+?>','',name)
 			name = re.search('^.+?\$', name).group()
-			name = re.sub('(,\s)?\$|❤ ','',name)
-			type = re.findall('\(.+?[\)\*\$]', name)[0]
+			try: type = re.findall('\(.+?[\)\*\$]', name)[1]
+			except: type = re.findall('\(.+?[\)\*\$]', name)[0]
 			name = name.replace(type, "").replace(",","")
 			type = re.sub('[\(\)\$]','',type)
+			name = re.sub('(,\s)?\$|❤ ','',name)
 			ws.append([name, type, price])
 			print("  => " + name)
 			print("  => " + type)
 			print("  => " + price)
 		wb.save(filename)
+		time.sleep(3)
 		
 	def benchmarks(self, response):
 		wb = openpyxl.load_workbook(filename)
 		ws = wb.create_sheet("score")
 		gpu = response.xpath('//td/a/text()').extract()
-		score = response.xpath('//td[@class="small-pr1"]/div/div/span[@class="bar-score"]/text()').extract()
-		for x, y in zip(gpu, score):
-			ws.append([x.strip(), y.strip()])
+		score = response.xpath('//td[@class="small-pr1"]/div/div/span/text()').extract()
+		price = response.xpath('//td[@class="list-tiny-none"]/span/div/text()').extract()
+		for x, y, z in zip(gpu, score, price):
+			ws.append([x.strip(), y.strip(), z.strip()])
 		wb.save(filename)
 	
