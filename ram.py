@@ -21,12 +21,13 @@ class coolpcSpider(scrapy.Spider):
 		ws = wb.active
 		sheet_type = set()
 		for row in response.xpath('//select/optgroup')[5].xpath('.//option'):
-			name=size=type=latency=price=None
+			name=size=type=latency=price=price_list=None
 			result=row.extract()
 			try: print(result)
 			except: continue
-			try: price = re.findall('\$\d+', result)[1]
-			except: price = re.findall('\$\d+', result)[0]
+			price_list = re.findall('\$\d+', result)
+			if len(price_list) > 0: price = price_list[-1]
+			else: continue
 			result = re.search('^.+?,', result).group()
 			result = re.sub('<.+?>','',result)
 			result = re.sub(r'(D4-|DD[DR]4 -?)(\d+)',r'DDR4-\2',result)

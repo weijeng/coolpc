@@ -24,24 +24,22 @@ class coolpcSpider(scrapy.Spider):
 		for row in response.xpath('//select/optgroup')[11].xpath('.//option'):
 			name=type=price=None
 			result=row.extract()
-			try: print result
+			try: print(result)
 			except: continue
-			name = re.search('^.+?\$', result).group()
+			if "cm" not in result: continue
+			name = re.sub(r'[\*\s]*參考價[\$\s]*(\d+)',r'$\1',result)
+			try: price = re.findall('\$\d+', name)[1]
+			except: price = re.findall('\$\s?\d+', name)[0]
 			name = re.sub('<.+?>','',name)
-			name = re.sub(',\s\$','',name)
-			if "cm" not in name: continue
-			type = re.findall('\(.+?\)', name)
-			for list in type:
-				if "cm" not in list: continue
-				type = list
+			name = re.search('^.+?\$', name).group()
+			name = re.sub('(,\s)?\$|❤ ','',name)
+			type = re.findall('\(.+?[\)\*\$]', name)[0]
 			name = name.replace(type, "").replace(",","")
-			type = type.replace("(","").replace(")","")
-			try: price = re.findall('\$\d+', result)[1]
-			except: price = re.findall('\$\d+', result)[0]
+			type = re.sub('[\(\)\$]','',type)
 			ws.append([name, type, price])
-			print "  ==> " + name
-			print "  ==> " + type + "\t" + price
-			#time.sleep(2)
+			print("  => " + name)
+			print("  => " + type)
+			print("  => " + price)
 		wb.save(filename)
 		
 	def benchmarks(self, response):
