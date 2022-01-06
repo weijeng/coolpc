@@ -38,11 +38,10 @@ class coolpcSpider(scrapy.Spider):
 			line = re.sub(r'(AMD )?Athlon', r'AMD Athlon', line)
 			line = re.sub('TR', 'Threadripper', line)
 			line = re.sub('Intel i', 'Intel Core i', line)
-			if "G5400" in line: line=line.replace("G5400", "Gold G5400")
-			cpu = re.search('(Intel|AMD)[\s\-\w\+]+', line).group()
+			try: cpu = re.search('(Intel|AMD)[\s\-\w\+]+', line).group()
+			except AttributeError: continue
 			try: watt = re.search('[\/\)]\d+W\/?', line).group().strip("W/").replace("/","").replace(")","")
 			except: pass
-			if 'Intel Xeon E5-2620 V4' in cpu: watt = "85"
 			try: cores = re.search('\d+核\/\d+緒', line).group()
 			except AttributeError: cores = re.search('\d+([^\w\s\"\-\.\/]{1,2}|C\d+T)', line).group()
 			if dict_cpu.get(cpu) == None: dict_cpu[cpu] = cores, watt, int(price.strip("$"))
@@ -58,8 +57,6 @@ class coolpcSpider(scrapy.Spider):
 			sp_ratio = "=(E"+j+"*2+F"+j+")/D"+j
 			if "G6400" in x: s1 = 1017; s2 = 2405
 			if "G6405" in x: s1 = 1074; s2 = 2417
-			if "5600G" in x: s1 = 1508; s2 = 7610
-			if "5700G" in x: s1 = 1581; s2 = 9407
 			if "10105F" in x: s1 = 1161; s2 = 4558
 			ws.append([ x, y[0], y[1], y[2], s1, s2, sp_ratio ])
 			i+=1
