@@ -38,6 +38,7 @@ class coolpcSpider(scrapy.Spider):
 			if len(price) > 1: price = price[1]
 			elif len(price) == 1: price = price[0]
 			else: print(" ==> Does not find price"); continue
+			if int(price.strip("$")) < 1000: continue
 			line = re.sub(r'(AMD )?R(\d)', r'AMD Ryzen \2', line)
 			line = re.sub(r'(AMD )?Athlon', r'AMD Athlon', line)
 			line = re.sub('TR', 'Threadripper', line)
@@ -68,11 +69,13 @@ class coolpcSpider(scrapy.Spider):
 		
 		# SSD
 		ws = wb.create_sheet("SSD")
-		ws.append(["Name", "Size", "Read", "Write", "Type", "Price", "PCIe Ver"])	
+		ws.append(["Name", "Size", "Read", "Write", "Type", "Price", "PCIe Ver", "Warranty", "Form factor"])	
 		for row in response.xpath('//select/optgroup')[6].xpath('.//option'):
-			name=size=read=write=type=price=pcie=None
+			name=size=read=write=type=price=pcie=warranty=form=None
 			result=row.extract()
 			try: print(result)
+			except: continue
+			try: read = re.search('讀:?(\d{3,4})', result).group(1)
 			except: continue
 			name = re.search('^.+?\/', result).group()
 			name = re.sub('<.+?>','',name)
@@ -80,22 +83,29 @@ class coolpcSpider(scrapy.Spider):
 			name = re.sub('[^w]:\d+M','',name)
 			if "Gen4" in result: pcie="4.0"
 			if "P5 Plus" in result: pcie="4.0"
-			try: size = re.search('\d{3,4}GB?|\dTB', result).group()
+			try: size = re.search('\d{3,4}GB?|[^-]\dTB?', result).group()
 			except: pass
 			if size: 
-				name = name.replace(size, "")
-				size = size.replace(" ", "").replace("-", "").replace("G", "").replace("B", "")
-				if "T" in size:
-					size = size.replace("T", "")
-					size = int(size)*1024
-			try: read = re.findall('\:\d{3,4}', result)[0].replace(":", "")
-			except: continue
-			write = re.findall('\:\d{3,4}', result)[1].replace(":", "")
+				size = size.replace(")", "")
+				if not "SE20" in name: name = name.replace(size, "")
+			else:
+				size = re.search('\dTB', result).group()
+			size = size.replace(" ", "").replace("G", "").replace("B", "")
+			if "T" in size:
+				size = size.replace("T", "")
+				size = int(size)*1024
+			name = name.replace('讀:'+read, "")
+			write = re.search('寫:?(\d{3,4})', result).group(1)
 			try: type = re.search('[TQM]LC', result).group()
 			except: pass
-			price = re.search('\$\d+', result).group()
-			ws.append([name, size, read, write, type, price, pcie])
-			#print "  ==> " + name + '\t' + size + '\t' + read + '\t' + write + '\t' + price
+			list_price = re.findall('\$\d+', result)
+			if len(list_price) > 1: price = list_price[1]
+			elif len(list_price) == 1: price = list_price[0]
+			if "三年" in result: warranty = "3 years"
+			if "五年" in result: warranty = "5 years"
+			if "2.5吋" in result: form = "2.5吋"
+			if int(read) > 800: form = "M.2"
+			ws.append([name, size, read, write, type, price, pcie, warranty, form])
 		wb.save(filename)
 		time.sleep(3)
 		
