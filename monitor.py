@@ -21,25 +21,30 @@ class coolpcSpider(scrapy.Spider):
 		ws = wb.active
 		monitor=response.xpath('//select/optgroup')[12]
 		i=0
-		panel_except = ['Ark', 'ROG', 'G5', 'MPG ARTYMIS', 'MAG ARTYMIS', 'TUF', 'Modern', 'PRO', 'QHD', 'Summit', '白']
+		panel_except = ['Ark', 'ROG', 'G5', 'MPG ARTYMIS', 'MAG ARTYMIS', 'TUF', 'Modern', 'PRO', 'QHD', 'Summit', '白', 'Odyssey']
+		r1920 = ['ED320QR', '22B2HN', 'C27T550FDC', 'C32T550FDC', 'DA430', 'MP271']
+		r2560 = ['PD2500Q']
 		ws.append(['Name', 'Size', 'Resolution', 'Input', 'Response', 'Panel', 'Refresh', 'HDR', 'Sync', 'Speaker', 'Price', 'Spec_others'])
 		for row in monitor.xpath('.//optgroup/@label'):
 			result=row.extract()
-			if "投影機" in result: break
+			if "外接式" in result: break
 			print(result)
 			size=resolution=None
 			try:
 				size=re.search('\d+吋', result).group()
+			except AttributeError: size = 'n/a'
+			try:
 				resolution=re.search('\d+\*\d+', result).group()
-			except: pass
+			except AttributeError: resolution = 'n/a'
 			for row2 in monitor.xpath('.//optgroup')[i].xpath('./option'):
 				result2=row2.extract()
 				if "掛架" in result2: continue
 				if "$" not in result2: continue
 				if "市價" in result2: continue
+				if "加贈" in result2: continue
 				try: print('  ' + result2)
 				except: continue
-				name=spec=input=response=panel=refresh=hdr=sync=speaker=price=spec_others=None
+				name=spec=input=response=panel=refresh=hdr=sync=speaker=price=spec_others=resolution2=r2=None
 				name = re.sub('<.+?>', '', result2)
 				name = re.sub(',.+$', '', name)
 				name = re.sub('\$.+$', '', name)
@@ -72,17 +77,23 @@ class coolpcSpider(scrapy.Spider):
 				if panel == 'VA165Hz': panel = 'VA'; refresh = '165Hz'
 				if panel == '4m': panel = spec_list[0]; response = '4ms'; spec_list.pop(0)
 				if panel == '': panel = spec_list[0]; spec_list.pop(0)
+				for j in r1920: 
+					if j in name: resolution2 = '1920*1080'
+				for j in r2560: 
+					if j in name: resolution2 = '2560*1440'
 				print(' => ' + input, end = '')
 				try: print(' | ' + response, end = '')
 				except TypeError: pass
 				print(' | ' + panel, end = '')
-				try: print(' | ' + refresh); print(' => Others: ', end = '') 
+				try: print(' | ' + refresh); print(' => Others: ', end = '')
 				except TypeError: print('\n => Others: ', end = '')
 				print(spec_list)
 				price = re.findall('\$\d+', result2)
 				price = min(price)
 				spec_others = ' '.join(spec_list)
+				if resolution2 != None: resolution = resolution2; r2=True
 				ws.append([name.rstrip(' '), size, resolution, input, response, panel, refresh, hdr, sync.lstrip(' '), speaker, int(price.strip('$')), spec_others])
+				if r2==True: resolution=None; r2=False
 			i+=1
 		wb.save(filename)
 	

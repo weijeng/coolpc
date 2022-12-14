@@ -45,6 +45,7 @@ class coolpcSpider(scrapy.Spider):
 			line = re.sub('Intel i', 'Intel Core i', line)
 			try: cpu = re.search('(Intel|AMD)[\s\-\w\+]+', line).group()
 			except AttributeError: continue
+			cpu = re.sub(r'[\u4e00-\u9fff]+', '', cpu).strip()
 			try: watt = re.search('[\/\)]\d+W\/?', line).group().strip("W/").replace("/","").replace(")","")
 			except: pass
 			try: cores = re.search('\d+核\/\d+緒', line).group()
