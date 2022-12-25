@@ -23,30 +23,28 @@ class coolpcSpider(scrapy.Spider):
 		for row in response.xpath('//select/optgroup')[5].xpath('.//option'):
 			name=size=type=latency=price=price_list=None
 			result=row.extract()
+			if "disabled" in result: continue
 			try: print(result)
 			except: continue
-			price_list = re.findall('\$\d+', result)
-			if len(price_list) > 0: price = price_list[-1]
-			else: continue
+			price = re.findall('\$\d+', result)
+			price = min(price).strip('$')
 			result = re.search('^.+?,', result).group()
-			result = re.sub('<.+?>','',result)
-			result = re.sub(r'(D4-|DD[DR]4 -?)(\d+)',r'DDR4-\2',result)
-			result = re.sub(r'(\d+)MHz D(DR)?4',r'DDR4-\1',result)
-			if "DDR" not in result: continue
-			try: size = re.search('\(?\d+G\*\d\)?', result).group()
-			except: size = re.search('\d+GB?', result).group()
+			result = re.sub('<.+?>', '', result)
+			result = re.sub(r'\(\d+\*\d\)', '', result)				# modify: (2048*8)
+			result = re.sub(r'(D4-|DD[DR]4 -?)(\d+)', r'DDR4-\2', result)
+			result = re.sub(r'D5[\s-](\d+)', r'DDR5-\1', result)	# modify: D5-6000, D5 6000
+			result = re.sub(r'(\d+)MHz D(DR)?4', r'DDR4-\1', result)# modify: 3200MHz D4
+			result = re.sub(r'DDR5 (\d+)', r'DDR5-\1', result)		# modify: DDR5 5600
+			result = re.sub(r'(\d+)G?B?[*x](\d)', r'\1GBx\2', result)
+			result = re.sub(r'(\d)G DDR', r'\1GB DDR', result)		# modify: 4G DDR3-1600
+			name = re.search('^.+?GB', result).group()
+			name = re.sub(r'\d+GB$', '', name).strip(' ')
+			try: size = re.search('\d+GBx\d', result).group()
+			except: size = re.search('\d+GB', result).group()
 			type = re.search('DDR\dL?-\d+', result).group()
-			name = re.sub(type,'',result)
-			try:
-				latency = re.search('CL ?\d+(-\d+-\d+)?', result).group()
-				name = re.sub(latency,'',name)
-			except: pass
-			name = name.replace(size,'')
-			size = re.sub('[\(\)]','',size)
-			if "B" not in size: size = re.sub('G','GB',size)
-			name = re.sub('[,/]','',name)
-			name = re.sub('\s+',' ',name)
-			print("  ==> " + name)
+			try: latency = re.search('CL ?\d+(-\d+-\d+)?', result).group()
+			except: latency = 'n/a'
+			print("  => " + name + '|' + size + '|' + type + '|' + latency + '|' + price)
 			if type not in sheet_type:
 				ws = wb.create_sheet(type)
 				sheet_type.add(type)
