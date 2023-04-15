@@ -33,7 +33,7 @@ class coolpcSpider(scrapy.Spider):
 			for row in graphic.xpath('.//optgroup')[i].xpath('./option'):
 				name=core=memory=length=warranty=price=None
 				result=row.extract()
-				if "$" not in result: continue
+				if "disabled" in result: continue
 				try: print('  ' + result)
 				except: continue
 				spec = re.findall('\(.+?\)', result)

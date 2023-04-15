@@ -21,7 +21,7 @@ class coolpcSpider(scrapy.Spider):
 		ws = wb.active
 		notebook=response.xpath('//select/optgroup')[1]
 		i=0
-		ws.append(['Series', 'Name', 'Size', 'CPU', 'Ram', 'Storage', 'GPU', 'Price'])
+		ws.append(['Series', 'Name', 'Size', 'CPU', 'Ram', 'Storage', 'GPU', 'Price', 'Difference'])
 		for row in notebook.xpath('.//optgroup/@label'):
 			result=row.extract()
 			print("=> " + result)
@@ -39,16 +39,15 @@ class coolpcSpider(scrapy.Spider):
 				if "任一款" in result2: continue
 				try: print("   " + result2)
 				except: continue
-				name=cpu=ram=storage=gpu=price=refresh=None
+				name=cpu=ram=storage=gpu=price=refresh=difference=None
 				result2 = re.sub('<.+?>', '', result2)
 				spec_list = result2.split('/')
-				print("     ",end=''); print(spec_list)
 				try: cpu = re.search('[iR][3579]( PRO)?\-\w+', spec_list[0]).group()
 				except AttributeError: pass
 				try: cpu = re.search('(Pentium|Celeron) \w+', spec_list[0]).group()
 				except AttributeError: pass
 				name = re.sub(cpu, '', spec_list[0]).strip('(')
-				ram = spec_list[1]
+				ram = spec_list[1].strip('/')
 				storage = spec_list[2].replace(' SSD', '')
 				try:
 					refresh = re.search('d+Hz', result2).group()
@@ -65,14 +64,18 @@ class coolpcSpider(scrapy.Spider):
 					if "UHD" in spec_list[3]: gpu = "Intel UHD"
 					if "Xe" in spec_list[3]: gpu = "Intel Iris Xe"
 				price = re.findall('\$\d+', result2)
-				price = min(price)
+				if len(price) > 1:
+					difference = int(price[1].strip('$')) - int(price[0].strip('$'))
+					price = int(price[1].strip('$'))
+				else: price = int(price[0].strip('$'))
 				uhd_list = ["X515EA", "Pentium N6000"]
 				for u in uhd_list:
 					if u in spec_list[0]: gpu = "Intel UHD"
 				if "J0052" in spec_list[0]: gpu = "Intel Iris Xe"
 				if "Z90Q" in spec_list[0]: gpu = "Intel Iris Xe"
-				print("       " + name + ' |' + size + ' |' + cpu + ' |' + ram.strip('/') + ' |' + storage + ' |' + gpu + ' |' + refresh.strip('/') + ' |' + price)
-				ws.append([series, name, size, cpu, ram.strip('/'), storage, gpu, int(price.strip('$'))])
+				parsing=[size,cpu,ram,storage,gpu,refresh]
+				print(' => ' + ' | '.join(parsing))
+				ws.append([series, name, size, cpu, ram, storage, gpu, price, difference])
 			i+=1
 		wb.save(filename)
 	
