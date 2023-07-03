@@ -29,11 +29,6 @@ class coolpcSpider(scrapy.Spider):
 			line=row.extract()
 			try: print(line)
 			except: print(" ==> Can not print"); continue
-			if "技嘉" in line: continue
-			if "華碩" in line: continue
-			if "微星" in line: continue
-			if "金士頓" in line: continue
-			if "鍵盤" in line: continue
 			price = re.findall('\$\d+', line)
 			if len(price) > 1: price = price[1]
 			elif len(price) == 1: price = price[0]
@@ -48,8 +43,8 @@ class coolpcSpider(scrapy.Spider):
 			cpu = re.sub(r'[\u4e00-\u9fff]+', '', cpu).strip()
 			try: watt = re.search('[\/\)]\d+W\/?', line).group().strip("W/").replace("/","").replace(")","")
 			except: pass
-			try: cores = re.search('\d+核\/\d+緒', line).group()
-			except AttributeError: cores = re.search('\d+([^\w\s\"\-\.\/]{1,2}|C\d+T)', line).group()
+			try: cores = re.search('全?\d+大?核\/\d+緒', line).group()
+			except AttributeError: continue
 			if dict_cpu.get(cpu) == None: dict_cpu[cpu] = cores, watt, int(price.strip("$"))
 			elif dict_cpu.get(cpu)[2] > int(price.strip("$")) and dict_cpu.get(cpu)[2] - int(price.strip("$")) < 5000:
 				watt = dict_cpu.get(cpu)[1]
@@ -76,7 +71,7 @@ class coolpcSpider(scrapy.Spider):
 			result=row.extract()
 			try: print(result)
 			except: continue
-			try: read = re.search('讀:?(\d{3,4})', result).group(1)
+			try: read = re.search('讀:?(\d{3,5})', result).group(1)
 			except: continue
 			name = re.search('^.+?\/', result).group()
 			name = re.sub('<.+?>','',name)
@@ -96,7 +91,7 @@ class coolpcSpider(scrapy.Spider):
 				size = size.replace("T", "")
 				size = int(size)*1024
 			name = name.replace('讀:'+read, "")
-			write = re.search('寫:?(\d{3,4})', result).group(1)
+			write = re.search('寫:?(\d{3,5})', result).group(1)
 			try: type = re.search('[TQM]LC', result).group()
 			except: pass
 			list_price = re.findall('\$\d+', result)
