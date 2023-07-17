@@ -92,6 +92,7 @@ class coolpcSpider(scrapy.Spider):
 					difference = int(price[1].strip('$')) - int(price[0].strip('$'))
 					price = int(price[1].strip('$'))
 				else: price = int(price[0].strip('$'))
+				if price == 1: continue
 				parsing=[w1,w2,w3,dpi,weight,rgb]
 				print(' => ' + ' | '.join(parsing))
 				spec_others = '/'.join(spec_list)
@@ -100,7 +101,7 @@ class coolpcSpider(scrapy.Spider):
 					else: size2=['','','']
 				ws.append([name.rstrip(' '), w1, w2, w3, dpi, weight, rgb, price, difference, size2[0], size2[1], size2[2], spec_others])
 				rawData.write(result + '\n')
-				rawData.flush()
 			i+=1		
+		rawData.flush()
 		wb.save(filename)
 	
