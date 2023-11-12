@@ -45,13 +45,10 @@ class coolpcSpider(scrapy.Spider):
 				w1=w2=w3="N"
 				result=row.extract()
 				if "disabled" in result: continue
-				#if "登錄" in result: continue
-				#if "購買" in result: continue
-				#if "加購" in result: continue
 				if "鼠線夾" in result: continue
 				try: print(result)
 				except: continue
-				result = result.replace('無線/藍芽', '無線-藍芽').replace('藍芽/無線', '無線-藍芽')
+				result = result.replace('藍牙', '藍芽').replace('無線/藍芽', '無線-藍芽').replace('藍芽/無線', '無線-藍芽')
 				name = re.sub('<.+?>', '', result)
 				name = re.sub('dpi送啟動卡,', 'dpi,', name)
 				name = re.sub('\s?,.+$', '', name)

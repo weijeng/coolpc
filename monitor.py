@@ -7,6 +7,9 @@ import datetime
 import time
 now=datetime.datetime.now()
 filename = "Monitor_" + now.strftime("%Y-%m-%d") + ".xlsx"
+currentTime = time.strftime("%Y%m%d_%H%M%S")
+rawData = open("Monitor_%s.log" %currentTime, "a+")
+wb = openpyxl.Workbook()
 
 class coolpcSpider(scrapy.Spider):
 	name = "monitor"
@@ -17,14 +20,13 @@ class coolpcSpider(scrapy.Spider):
 		yield scrapy.Request(url=urls[0], callback=self.parse)
 
 	def parse(self, response):
-		wb = openpyxl.Workbook()
 		ws = wb.active
 		monitor=response.xpath('//select/optgroup')[12]
 		i=0
 		panel_except = ['Ark', 'ROG', 'G5', 'MPG ARTYMIS', 'MAG ARTYMIS', 'TUF', 'Modern', 'PRO', 'QHD', 'Summit', '白', 'Odyssey']
 		r1920 = ['ED320QR', '22B2HN', 'C27T550FDC', 'C32T550FDC', 'DA430', 'MP271']
 		r2560 = ['PD2500Q']
-		ws.append(['Name', 'Size', 'Resolution', 'Input', 'Response', 'Panel', 'Refresh', 'HDR', 'Sync', 'Speaker', 'Price', 'Spec_others'])
+		ws.append(['Name', 'Size', 'Resolution', 'Input', 'Response', 'Panel', 'Refresh', 'HDR', 'Sync', 'Speaker', 'Price', 'Difference', 'Spec_others'])
 		for row in monitor.xpath('.//optgroup/@label'):
 			result=row.extract()
 			if "外接式" in result: break
@@ -39,12 +41,10 @@ class coolpcSpider(scrapy.Spider):
 			for row2 in monitor.xpath('.//optgroup')[i].xpath('./option'):
 				result2=row2.extract()
 				if "掛架" in result2: continue
-				if "$" not in result2: continue
-				if "市價" in result2: continue
-				if "加贈" in result2: continue
-				try: print('  ' + result2)
-				except: continue
-				name=spec=input=response=panel=refresh=hdr=sync=speaker=price=spec_others=resolution2=r2=None
+				if "disabled" in result2: continue
+				try: print(result2)
+				except: print(" debug:fail to print result2"); continue
+				name=spec=input=response=panel=refresh=hdr=sync=speaker=price=difference=spec_others=resolution2=""
 				name = re.sub('<.+?>', '', result2)
 				name = re.sub(',.+$', '', name)
 				name = re.sub('\$.+$', '', name)
@@ -52,48 +52,45 @@ class coolpcSpider(scrapy.Spider):
 				spec = max(spec, key=len)
 				name = name.replace(spec, ' ')
 				if 'VA含喇叭' in spec: spec = spec.replace('VA含喇叭', 'VA/含喇叭')
+				if 'VA無喇叭' in spec: spec = spec.replace('VA無喇叭', 'VA/無喇叭')
+				if '含喇叭FreeSync' in spec: spec = spec.replace('含喇叭FreeSync', '含喇叭/FreeSync')
+				spec = re.sub("VA165Hz", "VA/165Hz", spec)
 				spec = spec.strip('(').strip(')')
 				spec_list = spec.split('/')
 				for j in spec_list: 
-					if re.match(r'(\d[A-P])+', j): input = j; spec_list.remove(j); break
-				for j in spec_list: 
-					if re.match(r'\d(\.\d)?ms', j): response = j; spec_list.remove(j); break
-				for j in spec_list: 
-					if re.match(r'\d+Hz', j): refresh = j; spec_list.remove(j); break
-				for j in spec_list: 
-					if re.match(r'HDR\d+', j): hdr = j; spec_list.remove(j); break
-				for j in spec_list: 
-					if re.match(r'\s?(Ad|Fr|G-).+$', j): sync = j; spec_list.remove(j); break
-				if sync == None:
+					if re.match(r'(\d[A-P])+', j): input = j
+					if re.match(r'\d(\.\d)?ms', j): response = j
+					if re.match(r'\d+Hz', j): refresh = j
+					if re.match(r'HDR\d+', j): hdr = j
+					if re.match(r'\s?(Ad|Fr|G-).+$', j): sync = j
+					if re.match(r'TN|(Rapid|Nano|Fast)?\s?IPS|VA(曲面)?|OLED(曲面)?', j): panel = j
+				if sync == "":
 					match = re.search(r'G-.+?兼容', name)
 					try:
 						sync = name[match.start():match.end()]
 						name = name.replace(sync, '')
+						print(" => debug:G")
 					except: sync = ''
 				if '無喇叭' in spec_list: speaker = 'No'; spec_list.remove('無喇叭')
 				if '含喇叭' in spec_list: speaker = 'Yes'; spec_list.remove('含喇叭')
-				if spec_list[0] in panel_except: panel = spec_list[1]; spec_list.pop(1)
-				else: panel = spec_list[0]; spec_list.pop(0)
-				if panel == 'VA165Hz': panel = 'VA'; refresh = '165Hz'
-				if panel == '4m': panel = spec_list[0]; response = '4ms'; spec_list.pop(0)
-				if panel == '': panel = spec_list[0]; spec_list.pop(0)
 				for j in r1920: 
 					if j in name: resolution2 = '1920*1080'
 				for j in r2560: 
 					if j in name: resolution2 = '2560*1440'
-				print(' => ' + input, end = '')
-				try: print(' | ' + response, end = '')
-				except TypeError: pass
-				print(' | ' + panel, end = '')
-				try: print(' | ' + refresh); print(' => Others: ', end = '')
-				except TypeError: print('\n => Others: ', end = '')
-				print(spec_list)
 				price = re.findall('\$\d+', result2)
-				price = min(price)
-				spec_others = ' '.join(spec_list)
-				if resolution2 != None: resolution = resolution2; r2=True
-				ws.append([name.rstrip(' '), size, resolution, input, response, panel, refresh, hdr, sync.lstrip(' '), speaker, int(price.strip('$')), spec_others])
-				if r2==True: resolution=None; r2=False
+				if len(price) > 1:
+					difference = int(price[1].strip('$')) - int(price[0].strip('$'))
+					price = int(price[1].strip('$'))
+				else: price = int(price[0].strip('$'))
+				parsing=[input,response,panel,refresh,hdr,sync.lstrip(' ')]
+				print(' => ' + ' | '.join(parsing))
+				spec_others = '/'.join(spec_list)
+				if resolution2 == "":
+					ws.append([name.rstrip(' '), size, resolution, input, response, panel, refresh, hdr, sync.lstrip(' '), speaker, price, difference, spec_others])
+				else:
+					ws.append([name.rstrip(' '), size, resolution2, input, response, panel, refresh, hdr, sync.lstrip(' '), speaker, price, difference, spec_others])
+				rawData.write(result2 + '\n')
 			i+=1
+		rawData.flush()
 		wb.save(filename)
 	
