@@ -12,11 +12,13 @@ class coolpcSpider(scrapy.Spider):
 		urls = [
 			'http://www.coolpc.com.tw/evaluate.php',
 			'https://browser.geekbench.com/processor-benchmarks/',
-			'https://nanoreview.net/en/cpu-list/cinebench-scores'
+			'https://nanoreview.net/en/cpu-list/cinebench-scores',
+			'https://nanoreview.net/en/cpu-list/cinebench-scores?page=2'
 		]
 		yield scrapy.Request(url=urls[0], callback=self.parse)
 		yield scrapy.Request(url=urls[1], callback=self.parse_geek)
 		yield scrapy.Request(url=urls[2], callback=self.parse_nanoreview)
+		yield scrapy.Request(url=urls[3], callback=self.parse_nanoreview2)
 
 	def parse(self, response):
 		wb = openpyxl.Workbook()
@@ -61,7 +63,7 @@ class coolpcSpider(scrapy.Spider):
 			ws.append([ x, y[0], y[1], y[2], s1, s2, sp_ratio ])
 			i+=1
 		wb.save(filename)
-		time.sleep(3)
+		time.sleep(2)
 		
 		# SSD
 		ws = wb.create_sheet("SSD")
@@ -103,7 +105,7 @@ class coolpcSpider(scrapy.Spider):
 			if int(read) > 800: form = "M.2"
 			ws.append([name, size, read, write, type, price, pcie, warranty, form])
 		wb.save(filename)
-		time.sleep(3)
+		time.sleep(2)
 		
 	def parse_geek(self, response):
 		wb = openpyxl.load_workbook(filename)
@@ -123,18 +125,36 @@ class coolpcSpider(scrapy.Spider):
 				latest = score
 				score = 0
 		wb.save(filename)
+		time.sleep(2)
 
 	def parse_nanoreview(self, response):
 		wb = openpyxl.load_workbook(filename)
 		ws = wb.create_sheet("nanoreview")
 		ws.append(["CPU", "Single-Core Score", "Multi-Core Score"])
-		cpu = response.xpath('//td/a/text()').extract()
-		score = response.xpath('//td/text()').extract()
+		cpu = response.xpath('//tr').xpath('./td/div/a/text()').extract()
+		score = response.xpath('//div[@style="margin-bottom: 6px;"]/text()').extract()
 		single = []
 		multiple = []
-		for i in range(1, len(score), 8):
+		for i in range(0, len(score), 2):
 			single.append(score[i].strip())
-			multiple.append(score[i+2].strip())
+			multiple.append(score[i+1].strip())
+		for x, y, z in zip(cpu, single, multiple):
+			x = re.sub(r'Core i(\d) ', r'Intel Core i\1-', x)
+			x = re.sub("Ryzen", "AMD Ryzen", x)
+			ws.append([x, y, z])
+		wb.save(filename)
+		time.sleep(2)
+		
+	def parse_nanoreview2(self, response):
+		wb = openpyxl.load_workbook(filename)
+		ws = wb["nanoreview"]
+		cpu = response.xpath('//tr').xpath('./td/div/a/text()').extract()
+		score = response.xpath('//div[@style="margin-bottom: 6px;"]/text()').extract()
+		single = []
+		multiple = []
+		for i in range(0, len(score), 2):
+			single.append(score[i].strip())
+			multiple.append(score[i+1].strip())
 		for x, y, z in zip(cpu, single, multiple):
 			x = re.sub(r'Core i(\d) ', r'Intel Core i\1-', x)
 			x = re.sub("Ryzen", "AMD Ryzen", x)
