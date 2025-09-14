@@ -37,7 +37,8 @@ class coolpcSpider(scrapy.Spider):
 				try: print('  ' + result)
 				except: continue
 				spec = re.findall('\(.+?\)', result)
-				spec = max(spec, key=len)
+				if len(spec) > 0: spec = max(spec, key=len)
+				else: continue
 				name = re.sub('<.+?>', '', result)
 				name = re.sub(',.+$', '', name)
 				name = re.sub('\$.+$', '', name)

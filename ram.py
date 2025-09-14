@@ -24,6 +24,7 @@ class coolpcSpider(scrapy.Spider):
 			name=size=type=latency=price=price_list=None
 			result=row.extract()
 			if "disabled" in result: continue
+			if "ECC" in result: continue
 			try: print(result)
 			except: continue
 			price = re.findall('\$\d+', result)

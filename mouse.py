@@ -25,8 +25,8 @@ class coolpcSpider(scrapy.Spider):
 		i=0
 		size={"M171":[98,62,35], "M190":[115,66,40], "M221":[99,60,39], "M235n":[95,55,39], "M240":[99,60,39], "M280":[105,68,38],
 		"G304":[117,62,38], "M310T":[111,62,39], "M325":[95,57,39], "M331 SilentPlus":[105,68,38], "M350":[107,59,27],
-		"Ms350r":[95,58,36], "M550r":[98,59,37], "M830r":[110,80,41], "M850r":[126,82,45], "M900r":[101.5,70.5,38], "M985r":[122,66,66],
-		"M585":[103,64,40], "M650":[108,61,39], "Ms650r":[100,75,40], "Ms930r":[116,82.5,53], "Ms950r":[125,84,45],
+		"Ms350r":[95,58,36], "M550r":[98,59,37], "M600R":[115,68,41], "M830r":[110,80,41], "M850r":[126,82,45], "M900r":[101.5,70.5,38], "M985r":[122,66,66],
+		"M585":[103,64,40], "M650":[108,61,39], "Ms650r":[100,75,40], "M750":[107,62,38], "Ms930r":[116,82.5,53], "Ms950r":[125,84,45],
 		"irocks M23":[106,57,33.5], "S1000 Plus":[104,61,34], "B700r":[110,55,25], "Tuf Gaming M4":[126,63.5,40],
 		"Razer Atheris":[100,63,34], "Orochi V2":[108,60,38], "Basilisk":[130,60,42], "DeathAdder V2":[127,62,43],
 		"Katar Pro Wireless":[116,64,38], "Pop Mouse":[105,59,35], "SteelSeries Rival 3":[121,58,21.5],
@@ -71,11 +71,10 @@ class coolpcSpider(scrapy.Spider):
 					if "藍芽" in j: w3='Y'; break
 				if "2.4G" in name: w2='Y'
 				if "無線" in name: w2='Y'
+				if "M240" in name: w2='N'
 				if "Pop Mouse" in name: w3='Y'
 				if "有線" in name: w1='Y'
 				if "威剛 XPG Alpha 電競滑鼠" in name: w1='Y'
-				if "M425G" in name: w1='Y'
-				if "M585" in name: w3='Y'
 				if "Harpoon Rgb Wireless" in name: w1='Y'; w3='Y'
 				if "Katar Pro Wireless" in name: w3='Y'
 				for j in spec_list:
